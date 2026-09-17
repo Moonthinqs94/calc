@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator & Simulasi Fee Transaksi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F1F4F2;
+    --panel: #FFFFFF;
+    --ink: #16231F;
+    --ink-soft: #4C5C56;
+    --line: #D8E1DC;
+    --accent: #0E6E55;
+    --accent-soft: #E4F0EA;
+    --amber: #C9822A;
+    --amber-soft: #F6E9D6;
+    --track: #E4E9E6;
+    --danger: #B4482C;
+    --shadow: rgba(22, 35, 31, 0.08);
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-ui: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121815;
+      --panel: #1A211D;
+      --ink: #ECF3EF;
+      --ink-soft: #A9B8B1;
+      --line: #2C362F;
+      --accent: #4FB88F;
+      --accent-soft: #223229;
+      --amber: #E0A758;
+      --amber-soft: #332A1C;
+      --track: #232B26;
+      --danger: #E08064;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #121815;
+    --panel: #1A211D;
+    --ink: #ECF3EF;
+    --ink-soft: #A9B8B1;
+    --line: #2C362F;
+    --accent: #4FB88F;
+    --accent-soft: #223229;
+    --amber: #E0A758;
+    --amber-soft: #332A1C;
+    --track: #232B26;
+    --danger: #E08064;
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+
+  .wrap { width: 100%; max-width: 680px; }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(28px, 5vw, 36px);
+    line-height: 1.15;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0 0 28px;
+    max-width: 52ch;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    padding: 10px 4px 12px;
+    margin-right: 22px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transform: translateY(1px);
+  }
+
+  .tab-btn.active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .panel + .panel { margin-top: 20px; }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .amount-input-row {
+    display: flex;
+    align-items: baseline;
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 10px;
+    margin-bottom: 6px;
+    transition: border-color 0.15s ease;
+  }
+
+  .amount-input-row:focus-within { border-color: var(--accent); }
+
+  .prefix {
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--ink-soft);
+    margin-right: 8px;
+  }
+
+  #belanjaInput {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 6vw, 38px);
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    margin: 18px 0 28px;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+
+  .plan-toggle { display: flex; gap: 10px; margin-bottom: 30px; }
+
+  .plan-btn {
+    flex: 1;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 14px 12px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .plan-btn .plan-pct {
+    display: block;
+    font-weight: 400;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    margin-top: 3px;
+  }
+
+  .plan-btn.active { border-color: var(--accent); background: var(--accent-soft); }
+  .plan-btn.active .plan-pct { color: var(--accent); }
+
+  .divider { border: none; border-top: 1px solid var(--line); margin: 0 0 26px; }
+
+  .result-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 18px; }
+  .result-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+  .result-value {
+    font-family: var(--font-display);
+    font-size: clamp(34px, 7vw, 46px);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .result-value.capped { color: var(--amber); }
+
+  .bar-track { height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.2s ease; }
+  .bar-fill.capped { background: var(--amber); }
+  .bar-caption { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+
+  .breakdown { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .breakdown-item { border-top: 1px solid var(--line); padding-top: 12px; }
+  .breakdown-item .k { font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .breakdown-item .v { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .formula-note {
+    margin-top: 28px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+  .formula-note code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  /* Simulation view */
+  .sim-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .sim-field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .sim-field input {
+    width: 100%;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    padding: 10px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .sim-field input:focus { border-color: var(--accent); }
+
+  .run-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--panel);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 14.5px;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+
+  .run-btn:active { opacity: 0.85; }
+
+  .run-caption {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 0 0 30px;
+  }
+
+  .plan-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .plan-card {
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+  }
+
+  .plan-card.free { border-color: var(--accent); background: var(--accent-soft); }
+  .plan-card.pro { border-color: var(--amber); background: var(--amber-soft); }
+
+  .plan-card .title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+  .plan-card .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    padding: 5px 0;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .plan-card .stat-row:first-of-type { border-top: none; }
+  .plan-card .stat-row .k { color: var(--ink-soft); }
+  .plan-card .stat-row .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  #histCanvas, #feeCanvas {
+    width: 100%;
+    display: block;
+  }
+
+  .chart-caption {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 480px) {
+    .panel { padding: 22px; }
+    .breakdown { grid-template-columns: 1fr; }
+    .sim-inputs { grid-template-columns: 1fr; }
+    .plan-summary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fee transaksi OSK</h1>
+  <p class="sub">Hitung estimasi fee satu transaksi, atau jalankan simulasi banyak transaksi sekaligus untuk lihat proyeksi total fee.</p>
+
+  <div class="tabs">
+    <button class="tab-btn" data-view="calc">Kalkulator</button>
+    <button class="tab-btn active" data-view="sim">Simulasi</button>
+  </div>
+
+  <!-- ===================== CALCULATOR VIEW ===================== -->
+  <div class="view" id="view-calc">
+    <div class="panel">
+      <label class="field-label" for="belanjaInput">Total belanja keranjang</label>
+      <div class="amount-input-row">
+        <span class="prefix">Rp</span>
+        <input type="text" id="belanjaInput" inputmode="numeric" value="1.500.000" autocomplete="off">
+      </div>
+      <input type="range" id="belanjaSlider" min="0" max="30000000" step="50000" value="1500000">
+
+      <div class="plan-toggle">
+        <button class="plan-btn active" data-plan="free" id="btnFree">
+          Plan Free
+          <span class="plan-pct">5% per transaksi</span>
+        </button>
+        <button class="plan-btn" data-plan="pro" id="btnPro">
+          Plan Pro / Bisnis
+          <span class="plan-pct">3% per transaksi</span>
+        </button>
+      </div>
+
+      <hr class="divider">
+
+      <div class="result-row">
+        <span class="result-label">Estimasi fee</span>
+        <span class="result-value" id="resultValue">Rp75.000</span>
+      </div>
+
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width: 0%"></div></div>
+      <p class="bar-caption" id="barCaption">Belum mencapai batas maksimal fee Rp650.000.</p>
+
+      <div class="breakdown">
+        <div class="breakdown-item">
+          <div class="k">Tarif efektif</div>
+          <div class="v" id="effectiveRate">5,0%</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="k">Titik impas batas maksimal</div>
+          <div class="v" id="breakevenValue">Rp13.000.000</div>
+        </div>
+      </div>
+
+      <p class="formula-note">
+        Formula: <code>Fee = MIN(Total Belanja × Persentase Plan, Rp650.000)</code> — begitu total belanja melewati titik impas, fee berhenti naik dan tetap di batas maksimal.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================== SIMULATION VIEW ===================== -->
+  <div class="view active" id="view-sim">
+    <div class="panel">
+      <div class="sim-inputs">
+        <div class="sim-field">
+          <label for="simMean">Rata-rata belanja (Rp)</label>
+          <input type="text" id="simMean" inputmode="numeric" value="1.500.000">
+        </div>
+        <div class="sim-field">
+          <label for="simStd">Standar deviasi (Rp)</label>
+          <input type="text" id="simStd" inputmode="numeric" value="900.000">
+        </div>
+        <div class="sim-field">
+          <label for="simFloor">Belanja minimum (Rp)</label>
+          <input type="text" id="simFloor" inputmode="numeric" value="20.000">
+        </div>
+        <div class="sim-field">
+          <label for="simN">Jumlah transaksi</label>
+          <input type="text" id="simN" inputmode="numeric" value="300">
+        </div>
+      </div>
+
+      <button class="run-btn" id="runSim">Jalankan simulasi</button>
+      <p class="run-caption">Belanja tiap transaksi digenerate mengikuti distribusi normal dari parameter di atas. Klik lagi untuk mengacak ulang.</p>
+
+      <div class="plan-summary">
+        <div class="plan-card free">
+          <div class="title">Plan Free (5%)</div>
+          <div class="stat-row"><span class="k">Total fee</span><span class="v" id="freeTotalFee">–</span></div>
+          <div class="stat-row"><span class="k">Rata-rata fee</span><span class="v" id="freeAvgFee">–</span></div>
+          <div class="stat-row"><span class="k">Transaksi kena cap</span><span class="v" id="freeCapped">–</span></div>
+        </div>
+        <div class="plan-card pro">
+          <div class="title">Plan Pro / Bisnis (3%)</div>
+          <div class="stat-row"><span class="k">Total fee</span><span class="v" id="proTotalFee">–</span></div>
+          <div class="stat-row"><span class="k">Rata-rata fee</span><span class="v" id="proAvgFee">–</span></div>
+          <div class="stat-row"><span class="k">Transaksi kena cap</span><span class="v" id="proCapped">–</span></div>
+        </div>
+      </div>
+
+      <div class="chart-title">Distribusi nominal belanja per transaksi</div>
+      <canvas id="histCanvas" height="180"></canvas>
+      <p class="chart-caption" id="histCaption"></p>
+    </div>
+
+    <div class="panel">
+      <div class="chart-title">Total fee terkumpul: Free vs Pro/Bisnis</div>
+      <canvas id="feeCanvas" height="140"></canvas>
+      <p class="chart-caption" id="totalCaption"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ---------- shared helpers ---------- */
+  const PLANS = {
+    free: { label: "Plan Free", pct: 0.05, cap: 650000 },
+    pro:  { label: "Plan Pro / Bisnis", pct: 0.03, cap: 650000 }
+  };
+
+  function formatRp(n) { return "Rp" + Math.round(n).toLocaleString("id-ID"); }
+  function formatPct(n) { return n.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%"; }
+  function parseAmount(str) {
+    const digits = String(str).replace(/[^0-9]/g, "");
+    return digits ? parseInt(digits, 10) : 0;
+  }
+
+  /* ---------- tabs ---------- */
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("view-" + btn.dataset.view).classList.add("active");
+    });
+  });
+
+  /* ==================== CALCULATOR ==================== */
+  let currentPlan = "free";
+  let currentAmount = 1500000;
+
+  const belanjaInput = document.getElementById("belanjaInput");
+  const belanjaSlider = document.getElementById("belanjaSlider");
+  const resultValue = document.getElementById("resultValue");
+  const barFill = document.getElementById("barFill");
+  const barCaption = document.getElementById("barCaption");
+  const effectiveRate = document.getElementById("effectiveRate");
+  const breakevenValue = document.getElementById("breakevenValue");
+  const btnFree = document.getElementById("btnFree");
+  const btnPro = document.getElementById("btnPro");
+
+  function renderCalc() {
+    const plan = PLANS[currentPlan];
+    const rawFee = currentAmount * plan.pct;
+    const fee = Math.min(rawFee, plan.cap);
+    const isCapped = rawFee >= plan.cap;
+    const breakeven = plan.cap / plan.pct;
+
+    resultValue.textContent = formatRp(fee);
+    resultValue.classList.toggle("capped", isCapped);
+    barFill.classList.toggle("capped", isCapped);
+
+    const pctOfCap = Math.min(100, (fee / plan.cap) * 100);
+    barFill.style.width = pctOfCap + "%";
+
+    barCaption.textContent = isCapped
+      ? "Sudah mencapai batas maksimal fee Rp650.000."
+      : `Belum mencapai batas maksimal. Perlu tambahan belanja ${formatRp(breakeven - currentAmount)} lagi untuk mencapai batas.`;
+
+    const effRate = currentAmount > 0 ? (fee / currentAmount) * 100 : plan.pct * 100;
+    effectiveRate.textContent = formatPct(effRate);
+    breakevenValue.textContent = formatRp(breakeven);
+
+    belanjaSlider.value = Math.min(currentAmount, 30000000);
+  }
+
+  belanjaInput.addEventListener("input", (e) => {
+    currentAmount = parseAmount(e.target.value);
+    e.target.value = currentAmount ? currentAmount.toLocaleString("id-ID") : "";
+    renderCalc();
+  });
+  belanjaInput.addEventListener("blur", () => { belanjaInput.value = currentAmount.toLocaleString("id-ID"); });
+  belanjaSlider.addEventListener("input", (e) => {
+    currentAmount = parseInt(e.target.value, 10);
+    belanjaInput.value = currentAmount.toLocaleString("id-ID");
+    renderCalc();
+  });
+
+  function selectPlan(planKey) {
+    currentPlan = planKey;
+    btnFree.classList.toggle("active", planKey === "free");
+    btnPro.classList.toggle("active", planKey === "pro");
+    renderCalc();
+  }
+  btnFree.addEventListener("click", () => selectPlan("free"));
+  btnPro.addEventListener("click", () => selectPlan("pro"));
+  renderCalc();
+
+  /* ==================== SIMULATION ==================== */
+  const simMean = document.getElementById("simMean");
+  const simStd = document.getElementById("simStd");
+  const simFloor = document.getElementById("simFloor");
+  const simN = document.getElementById("simN");
+
+  [simMean, simStd, simFloor].forEach(inp => {
+    inp.addEventListener("blur", () => { inp.value = parseAmount(inp.value).toLocaleString("id-ID"); });
+  });
+
+  function boxMuller() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  function runSimulation() {
+    const mean = parseAmount(simMean.value) || 1500000;
+    const std = parseAmount(simStd.value) || 500000;
+    const floor = parseAmount(simFloor.value) || 0;
+    let n = parseAmount(simN.value) || 300;
+    n = Math.max(10, Math.min(n, 5000));
+    simN.value = n;
+
+    const amounts = [];
+    for (let i = 0; i < n; i++) {
+      let val = mean + boxMuller() * std;
+      val = Math.max(floor, Math.round(val / 1000) * 1000);
+      amounts.push(val);
+    }
+
+    const stats = {};
+    ["free", "pro"].forEach(key => {
+      const plan = PLANS[key];
+      let totalFee = 0, capped = 0;
+      amounts.forEach(a => {
+        const raw = a * plan.pct;
+        const fee = Math.min(raw, plan.cap);
+        totalFee += fee;
+        if (raw >= plan.cap) capped++;
+      });
+      stats[key] = {
+        totalFee,
+        avgFee: totalFee / n,
+        capped,
+        cappedPct: (capped / n) * 100
+      };
+    });
+
+    document.getElementById("freeTotalFee").textContent = formatRp(stats.free.totalFee);
+    document.getElementById("freeAvgFee").textContent = formatRp(stats.free.avgFee);
+    document.getElementById("freeCapped").textContent = `${stats.free.capped} (${formatPct(stats.free.cappedPct)})`;
+
+    document.getElementById("proTotalFee").textContent = formatRp(stats.pro.totalFee);
+    document.getElementById("proAvgFee").textContent = formatRp(stats.pro.avgFee);
+    document.getElementById("proCapped").textContent = `${stats.pro.capped} (${formatPct(stats.pro.cappedPct)})`;
+
+    document.getElementById("histCaption").textContent =
+      `${n} transaksi disimulasikan · rata-rata belanja ${formatRp(mean)} · std dev ${formatRp(std)}`;
+    document.getElementById("totalCaption").textContent =
+      `Selisih total fee: ${formatRp(Math.abs(stats.free.totalFee - stats.pro.totalFee))} lebih ${stats.free.totalFee > stats.pro.totalFee ? "tinggi di Plan Free" : "tinggi di Plan Pro/Bisnis"}.`;
+
+    drawHistogram(amounts);
+    drawFeeComparison(stats.free.totalFee, stats.pro.totalFee);
+  }
+
+  function getCssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function setupCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const cssHeight = canvas.height || 180;
+    canvas.width = rect.width * dpr;
+    canvas.height = cssHeight * dpr;
+    canvas.style.height = cssHeight + "px";
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    return { ctx, w: rect.width, h: cssHeight };
+  }
+
+  function drawHistogram(amounts) {
+    const canvas = document.getElementById("histCanvas");
+    const { ctx, w, h } = setupCanvas(canvas);
+    ctx.clearRect(0, 0, w, h);
+
+    const max = Math.max(...amounts);
+    const binCount = 12;
+    const binSize = Math.max(50000, Math.ceil(max / binCount / 50000) * 50000);
+    const bins = new Array(binCount).fill(0);
+    amounts.forEach(a => {
+      let idx = Math.floor(a / binSize);
+      if (idx >= binCount) idx = binCount - 1;
+      bins[idx]++;
+    });
+    const maxCount = Math.max(...bins, 1);
+
+    const padLeft = 4, padBottom = 22, padTop = 8;
+    const chartW = w - padLeft * 2;
+    const chartH = h - padBottom - padTop;
+    const barGap = 6;
+    const barW = (chartW - barGap * (binCount - 1)) / binCount;
+
+    ctx.font = "11px 'Plus Jakarta Sans', sans-serif";
+    ctx.fillStyle = getCssVar('--ink-soft');
+    ctx.textAlign = "center";
+
+    bins.forEach((count, i) => {
+      const barH = (count / maxCount) * chartH;
+      const x = padLeft + i * (barW + barGap);
+      const y = padTop + (chartH - barH);
+      ctx.fillStyle = getCssVar('--accent');
+      ctx.beginPath();
+      const r = Math.min(4, barW / 2);
+      ctx.moveTo(x, y + barH);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.lineTo(x + barW - r, y);
+      ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+      ctx.lineTo(x + barW, y + barH);
+      ctx.closePath();
+      ctx.fill();
+
+      if (i % 2 === 0) {
+        ctx.fillStyle = getCssVar('--ink-soft');
+        const label = (binSize * i / 1000000).toFixed(1) + "jt";
+        ctx.fillText(label, x + barW / 2, h - 6);
+      }
+    });
+  }
+
+  function drawFeeComparison(freeTotal, proTotal) {
+    const canvas = document.getElementById("feeCanvas");
+    const { ctx, w, h } = setupCanvas(canvas);
+    ctx.clearRect(0, 0, w, h);
+
+    const max = Math.max(freeTotal, proTotal, 1);
+    const rows = [
+      { label: "Plan Free", value: freeTotal, color: getCssVar('--accent') },
+      { label: "Plan Pro/Bisnis", value: proTotal, color: getCssVar('--amber') }
+    ];
+
+    const rowH = h / rows.length;
+    const labelW = 110;
+    const maxBarW = w - labelW - 90;
+
+    ctx.font = "12.5px 'Plus Jakarta Sans', sans-serif";
+    ctx.textBaseline = "middle";
+
+    rows.forEach((row, i) => {
+      const cy = rowH * i + rowH / 2;
+      ctx.fillStyle = getCssVar('--ink');
+      ctx.textAlign = "left";
+      ctx.fillText(row.label, 0, cy);
+
+      const barW = (row.value / max) * maxBarW;
+      const barH = rowH * 0.42;
+      ctx.fillStyle = row.color;
+      ctx.beginPath();
+      const r = Math.min(6, barH / 2);
+      const x = labelW, y = cy - barH / 2;
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + barW - r, y);
+      ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+      ctx.lineTo(x + barW, y + barH - r);
+      ctx.quadraticCurveTo(x + barW, y + barH, x + barW - r, y + barH);
+      ctx.lineTo(x, y + barH);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = getCssVar('--ink');
+      ctx.textAlign = "left";
+      ctx.fillText(formatRp(row.value), labelW + barW + 10, cy);
+    });
+  }
+
+  document.getElementById("runSim").addEventListener("click", runSimulation);
+  window.addEventListener("resize", () => {
+    if (document.getElementById("view-sim").classList.contains("active")) runSimulation();
+  });
+
+  runSimulation();
+</script>
+</body>
+</html>
