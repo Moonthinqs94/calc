@@ -402,6 +402,13 @@
         Formula: <code>Fee = MIN(Total Belanja × Persentase Plan, Rp650.000)</code> — begitu total belanja melewati titik impas, fee berhenti naik dan tetap di batas maksimal.
       </p>
     </div>
+
+    <div class="panel">
+      <div class="chart-title">Perbandingan dengan marketplace lain</div>
+      <canvas id="compareCanvas" height="150"></canvas>
+      <p class="chart-caption" id="compareCaption"></p>
+      <p class="formula-note" id="compareNote"></p>
+    </div>
   </div>
 
   <!-- ===================== SIMULATION VIEW ===================== -->
@@ -464,6 +471,13 @@
     pro:  { label: "Plan Pro / Bisnis", pct: 0.03, cap: 650000 }
   };
 
+  // Representative rates for comparison — actual marketplace fees vary by product
+  // category and seller tier. Used only to give a directional estimate.
+  const COMPETITORS = {
+    shopee: { label: "Shopee", pct: 0.07, flat: 1250, cap: null, color: "#E85D3B" },
+    tiktok: { label: "TikTok Shop", pct: 0.12, flat: 0, cap: 650000, color: "#1F1F1F" }
+  };
+
   function formatRp(n) { return "Rp" + Math.round(n).toLocaleString("id-ID"); }
   function formatPct(n) { return n.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%"; }
   function parseAmount(str) {
@@ -478,6 +492,8 @@
       document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById("view-" + btn.dataset.view).classList.add("active");
+      if (btn.dataset.view === "calc") renderCalc();
+      if (btn.dataset.view === "sim") runSimulation();
     });
   });
 
@@ -518,6 +534,33 @@
     breakevenValue.textContent = formatRp(breakeven);
 
     belanjaSlider.value = Math.min(currentAmount, 30000000);
+
+    renderCompare();
+  }
+
+  function renderCompare() {
+    const oskPlan = PLANS[currentPlan];
+    const oskFee = Math.min(currentAmount * oskPlan.pct, oskPlan.cap);
+
+    const shopeeFee = currentAmount * COMPETITORS.shopee.pct + COMPETITORS.shopee.flat;
+    const tiktokFee = Math.min(currentAmount * COMPETITORS.tiktok.pct, COMPETITORS.tiktok.cap);
+
+    const rows = [
+      { label: `OSK (${oskPlan.label})`, value: oskFee, color: getCssVar('--accent') },
+      { label: "Shopee", value: shopeeFee, color: COMPETITORS.shopee.color },
+      { label: "TikTok Shop", value: tiktokFee, color: COMPETITORS.tiktok.color }
+    ];
+
+    const canvas = document.getElementById("compareCanvas");
+    if (canvas && document.getElementById("view-calc").classList.contains("active")) {
+      drawFeeComparison("compareCanvas", rows);
+    }
+
+    const cheapest = rows.reduce((a, b) => (a.value < b.value ? a : b));
+    document.getElementById("compareCaption").textContent =
+      `Untuk belanja ${formatRp(currentAmount)}, fee OSK paling ${oskFee === cheapest.value ? "rendah" : (oskFee < Math.max(shopeeFee, tiktokFee) ? "kompetitif" : "tinggi")} dibanding estimasi Shopee dan TikTok Shop.`;
+    document.getElementById("compareNote").innerHTML =
+      `Estimasi Shopee (~7% + Rp1.250/transaksi, tanpa cap) dan TikTok Shop (~12% komisi gabungan, cap Rp650.000) memakai tarif rata-rata kategori umum per 2026 — tarif aktual berbeda-beda tergantung kategori produk & tier toko, jadi angka ini indikatif saja, bukan patokan pasti.`;
   }
 
   belanjaInput.addEventListener("input", (e) => {
@@ -606,7 +649,10 @@
       `Selisih total fee: ${formatRp(Math.abs(stats.free.totalFee - stats.pro.totalFee))} lebih ${stats.free.totalFee > stats.pro.totalFee ? "tinggi di Plan Free" : "tinggi di Plan Pro/Bisnis"}.`;
 
     drawHistogram(amounts);
-    drawFeeComparison(stats.free.totalFee, stats.pro.totalFee);
+    drawFeeComparison("feeCanvas", [
+      { label: "Plan Free", value: stats.free.totalFee, color: getCssVar('--accent') },
+      { label: "Plan Pro/Bisnis", value: stats.pro.totalFee, color: getCssVar('--amber') }
+    ]);
   }
 
   function getCssVar(name) {
@@ -675,19 +721,14 @@
     });
   }
 
-  function drawFeeComparison(freeTotal, proTotal) {
-    const canvas = document.getElementById("feeCanvas");
+  function drawFeeComparison(canvasId, rows) {
+    const canvas = document.getElementById(canvasId);
     const { ctx, w, h } = setupCanvas(canvas);
     ctx.clearRect(0, 0, w, h);
 
-    const max = Math.max(freeTotal, proTotal, 1);
-    const rows = [
-      { label: "Plan Free", value: freeTotal, color: getCssVar('--accent') },
-      { label: "Plan Pro/Bisnis", value: proTotal, color: getCssVar('--amber') }
-    ];
-
+    const max = Math.max(...rows.map(r => r.value), 1);
     const rowH = h / rows.length;
-    const labelW = 110;
+    const labelW = 118;
     const maxBarW = w - labelW - 90;
 
     ctx.font = "12.5px 'Plus Jakarta Sans', sans-serif";
@@ -716,13 +757,14 @@
 
       ctx.fillStyle = getCssVar('--ink');
       ctx.textAlign = "left";
-      ctx.fillText(formatRp(row.value), labelW + barW + 10, cy);
+      ctx.fillText(formatRp(row.value), labelW + Math.max(barW, 2) + 10, cy);
     });
   }
 
   document.getElementById("runSim").addEventListener("click", runSimulation);
   window.addEventListener("resize", () => {
     if (document.getElementById("view-sim").classList.contains("active")) runSimulation();
+    if (document.getElementById("view-calc").classList.contains("active")) renderCompare();
   });
 
   runSimulation();
