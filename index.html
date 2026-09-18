@@ -553,7 +553,7 @@
 
     const canvas = document.getElementById("compareCanvas");
     if (canvas && document.getElementById("view-calc").classList.contains("active")) {
-      drawFeeComparison("compareCanvas", rows);
+      try { drawFeeComparison("compareCanvas", rows); } catch (err) { console.error("drawFeeComparison failed:", err); }
     }
 
     const cheapest = rows.reduce((a, b) => (a.value < b.value ? a : b));
@@ -648,11 +648,14 @@
     document.getElementById("totalCaption").textContent =
       `Selisih total fee: ${formatRp(Math.abs(stats.free.totalFee - stats.pro.totalFee))} lebih ${stats.free.totalFee > stats.pro.totalFee ? "tinggi di Plan Free" : "tinggi di Plan Pro/Bisnis"}.`;
 
-    drawHistogram(amounts);
-    drawFeeComparison("feeCanvas", [
-      { label: "Plan Free", value: stats.free.totalFee, color: getCssVar('--accent') },
-      { label: "Plan Pro/Bisnis", value: stats.pro.totalFee, color: getCssVar('--amber') }
-    ]);
+    let hist = null, cmp = null;
+    try { drawHistogram(amounts); } catch (err) { console.error("drawHistogram failed:", err); }
+    try {
+      drawFeeComparison("feeCanvas", [
+        { label: "Plan Free", value: stats.free.totalFee, color: getCssVar('--accent') },
+        { label: "Plan Pro/Bisnis", value: stats.pro.totalFee, color: getCssVar('--amber') }
+      ]);
+    } catch (err) { console.error("drawFeeComparison failed:", err); }
   }
 
   function getCssVar(name) {
@@ -761,13 +764,19 @@
     });
   }
 
-  document.getElementById("runSim").addEventListener("click", runSimulation);
+  document.getElementById("runSim").addEventListener("click", () => {
+    try { runSimulation(); } catch (err) { console.error("runSimulation failed:", err); }
+  });
   window.addEventListener("resize", () => {
-    if (document.getElementById("view-sim").classList.contains("active")) runSimulation();
-    if (document.getElementById("view-calc").classList.contains("active")) renderCompare();
+    if (document.getElementById("view-sim").classList.contains("active")) {
+      try { runSimulation(); } catch (err) { console.error("runSimulation failed:", err); }
+    }
+    if (document.getElementById("view-calc").classList.contains("active")) {
+      try { renderCompare(); } catch (err) { console.error("renderCompare failed:", err); }
+    }
   });
 
-  runSimulation();
+  try { runSimulation(); } catch (err) { console.error("runSimulation failed:", err); }
 </script>
 </body>
 </html>
